@@ -14,19 +14,17 @@ import numpy as np
 def remove_key(d, key, empty_subkey=None):
     r = d
     if key in r:
-        if empty_subkey is not None:
-            if empty_subkey in r[key]:
-                if not len(r[key][empty_subkey]):
-                    r[key].pop(empty_subkey)
-        else:
+        if empty_subkey is None:
             if not len(r[key]):
                 r.pop(key)
+        elif empty_subkey in r[key] and not len(r[key][empty_subkey]):
+            r[key].pop(empty_subkey)
     return r
 
 
 def is_valid_file(parser, arg):
     if not os.path.exists(arg):
-        parser.error("The file %s does not exist!" % arg)
+        parser.error(f"The file {arg} does not exist!")
     else:
         return open(arg, "r")  # return an open file handle
 
@@ -59,10 +57,12 @@ layout = json.load(args.layout)
 # If there is no range specified, leave it as None
 # and let Plotly handle it.
 for ax in ['x', 'y']:
-    if f'{ax}axis' in layout:
-        if 'range' in layout[f'{ax}axis']:
-            if len(layout[f'{ax}axis']['range']) != 2:
-                layout[f'{ax}axis']['range'] = None
+    if (
+        f'{ax}axis' in layout
+        and 'range' in layout[f'{ax}axis']
+        and len(layout[f'{ax}axis']['range']) != 2
+    ):
+        layout[f'{ax}axis']['range'] = None
 
 # Map vsl.plot.TraceType enum to Plotly objects.
 type_map = {
@@ -104,10 +104,9 @@ for trace in data:
     trace = remove_key(trace, "y")
     trace = remove_key(trace, "z")
 
-    if trace_type == 1:
-        if "marker" in trace:
-            trace["marker"].pop("opacity")
-            trace["marker"].pop("colorscale")
+    if trace_type == 1 and "marker" in trace:
+        trace["marker"].pop("opacity")
+        trace["marker"].pop("colorscale")
 
     if "x_str" in trace:
         if trace_type == 5:
